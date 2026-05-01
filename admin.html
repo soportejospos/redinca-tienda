@@ -879,6 +879,16 @@ input:checked + .tslider:before { transform: translateX(20px); }
           </select>
         </div>
       </div>
+
+      <!-- NUEVO CAMPO: COSTO (Bs.) -->
+      <div class="frow">
+        <div class="fgroup">
+          <label class="flabel">Costo (Bs.)</label>
+          <input type="number" id="pf-costo" class="finput" placeholder="0.00" min="0" step="0.01" value="0"/>
+        </div>
+        <div class="fgroup"></div> <!-- columna vacía para mantener el grid -->
+      </div>
+
       <div class="fgroup">
         <label class="flabel">Fotos (máx. 4)</label>
         <div class="img-upload" onclick="document.getElementById('img-input').click()" id="img-drop">
@@ -927,6 +937,7 @@ input:checked + .tslider:before { transform: translateX(20px); }
 const SUPABASE_URL = 'https://ysecnphhuessiznsdfof.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZWNucGhodWVzc2l6bnNkZm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTgyOTgsImV4cCI6MjA5MzE5NDI5OH0.nFeRiqEoyALMF0XEiyrxbIN1CgzfXzjfzWNMnSp14Dw';
 const WA_NUMBER     = '56990500542';
+
 // ─────────────────────────────────────────────
 // SUPABASE INIT
 // ─────────────────────────────────────────────
@@ -1113,7 +1124,7 @@ window.renderProductTable = function() {
             <div class="prod-ref">${p.descripcion?p.descripcion.slice(0,55)+'…':''}</div>
           </div>
         </div>
-      </td>
+       </div>
       <td class="hide-sm"><span class="badge badge-orange">${p.categoria||'—'}</span></td>
       <td style="font-weight:700;color:var(--accent);font-size:15px;">Bs. ${fmt(p.precio)}</td>
       <td>
@@ -1121,13 +1132,13 @@ window.renderProductTable = function() {
           <input type="checkbox" ${p.activo?'checked':''} onchange="toggleActive('${p.id}',this.checked)"/>
           <span class="tslider"></span>
         </label>
-      </td>
+       </div>
       <td>
         <div style="display:flex;gap:6px;">
           <button class="btn btn-ghost btn-sm" onclick="openProdModal('${p.id}')">Editar</button>
           <button class="btn btn-danger btn-sm" onclick="openDelModal('${p.id}','${p.nombre.replace(/'/g,"\\'")}')">Borrar</button>
         </div>
-      </td>
+       </div>
     </tr>`;
   }).join('');
 };
@@ -1141,7 +1152,7 @@ window.toggleActive = async function(id, val) {
 };
 
 // ─────────────────────────────────────────────
-// PRODUCT MODAL
+// PRODUCT MODAL (con soporte para costo)
 // ─────────────────────────────────────────────
 window.openProdModal = function(id) {
   pendingFiles=[]; existingUrls=[];
@@ -1156,13 +1167,16 @@ window.openProdModal = function(id) {
     document.getElementById('pf-desc').value  = p.descripcion||'';
     document.getElementById('pf-precio').value= p.precio||'';
     document.getElementById('pf-activo').value= String(p.activo!==false);
+    // asignar costo
+    document.getElementById('pf-costo').value = p.costo !== undefined ? p.costo : 0;
     existingUrls = p.imagenes||[];
     renderImgPreviews();
   } else {
     editId=null;
     document.getElementById('pf-title').textContent='Nuevo producto';
-    ['pf-nombre','pf-cat','pf-desc','pf-precio'].forEach(i=>document.getElementById(i).value='');
+    ['pf-nombre','pf-cat','pf-desc','pf-precio','pf-costo'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('pf-activo').value='true';
+    document.getElementById('pf-costo').value = 0;
   }
   document.getElementById('prod-modal-ov').classList.add('open');
 };
@@ -1197,6 +1211,7 @@ window.saveProduct = async function() {
   const nombre    = document.getElementById('pf-nombre').value.trim();
   const categoria = document.getElementById('pf-cat').value.trim();
   const precio    = parseFloat(document.getElementById('pf-precio').value);
+  const costo     = parseFloat(document.getElementById('pf-costo').value) || 0;
   const descripcion = document.getElementById('pf-desc').value.trim();
   const activo    = document.getElementById('pf-activo').value==='true';
   if (!nombre||!categoria||isNaN(precio)) { toast('Nombre, categoría y precio son obligatorios','err'); return; }
@@ -1213,7 +1228,7 @@ window.saveProduct = async function() {
       uploaded.push(publicUrl);
     }
     const imagenes = [...existingUrls, ...uploaded];
-    const payload  = {nombre,categoria,descripcion,precio,activo,imagenes};
+    const payload  = {nombre,categoria,descripcion,precio,costo,activo,imagenes};
     let err;
     if (editId) { ({error:err} = await sb.from('productos').update(payload).eq('id',editId)); }
     else        { ({error:err} = await sb.from('productos').insert([payload])); }
