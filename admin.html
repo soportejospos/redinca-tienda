@@ -8,9 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-/* ═══════════════════════════════════════════════
-   RESET Y ESTILOS BASE (SIN CAMBIOS)
-═══════════════════════════════════════════════ */
+/* RESET Y BASE (idéntico al original) */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
 
@@ -147,7 +145,7 @@ body {
 }
 .login-error.show { display: block; }
 
-/* ADMIN LAYOUT (idéntico) */
+/* ADMIN LAYOUT */
 #admin-app { display: none; position: relative; z-index: 1; min-height: 100vh; }
 #admin-app.visible { display: flex; }
 .sidebar {
@@ -285,7 +283,7 @@ body {
 }
 .panel-title { font-size: 16px; font-weight: 700; }
 
-/* TABLAS MEJORADAS (más separación y filas alternadas) */
+/* TABLAS */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th {
@@ -309,7 +307,7 @@ tr:last-child td { border-bottom: none; }
 tbody tr:nth-child(even) td { background-color: rgba(0,0,0,0.01); }
 tbody tr:hover td { background: rgba(0,0,0,0.02); }
 
-/* PRODUCTOS (idéntico al original) */
+/* PRODUCTOS */
 .prod-cell { display: flex; align-items: center; gap: 12px; }
 .prod-thumb { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); }
 .prod-thumb-placeholder { width: 42px; height: 42px; border-radius: 10px; background: rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; }
@@ -321,9 +319,6 @@ tbody tr:hover td { background: rgba(0,0,0,0.02); }
   border-radius: 99px; font-size: 12px; font-weight: 600;
 }
 .badge-orange { background: var(--accentL); color: var(--accent); border: 1px solid var(--accentBorder); }
-.badge-green  { background: rgba(48,209,88,0.1); color: #1a9e3f; border: 1px solid rgba(48,209,88,0.25); }
-.badge-gray   { background: rgba(0,0,0,0.05); color: var(--muted); border: 1px solid var(--border); }
-
 .toggle { position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer; }
 .toggle input { opacity: 0; width: 0; height: 0; }
 .tslider {
@@ -398,7 +393,7 @@ input:checked + .tslider:before { transform: translateX(20px); }
   cursor: pointer;
 }
 
-/* ÓRDENES (idéntico al original) */
+/* ÓRDENES */
 .order-card {
   background: var(--glass);
   backdrop-filter: blur(20px);
@@ -514,9 +509,9 @@ input:checked + .tslider:before { transform: translateX(20px); }
     <div class="sidebar-head"><div class="sidebar-logo"><div class="slogo-mark">R</div><div><div class="slogo-name">REDINCA 2025</div><div class="slogo-sub">Admin</div></div></div></div>
     <nav class="sidebar-nav">
       <div class="nav-group-label">Principal</div>
-      <button class="nav-item active" id="nav-dashboard" onclick="goTo('dashboard',this)"><span class="ni-icon">📊</span> Dashboard de ventas</button>
-      <button class="nav-item" id="nav-products" onclick="goTo('products',this)"><span class="ni-icon">🔩</span> Productos</button>
-      <button class="nav-item" id="nav-orders" onclick="goTo('orders',this)"><span class="ni-icon">📋</span> Órdenes<span class="nav-pill" id="orders-pill">0</span></button>
+      <button class="nav-item active" id="nav-dashboard" data-page="dashboard"><span class="ni-icon">📊</span> Dashboard de ventas</button>
+      <button class="nav-item" id="nav-products" data-page="products"><span class="ni-icon">🔩</span> Productos</button>
+      <button class="nav-item" id="nav-orders" data-page="orders"><span class="ni-icon">📋</span> Órdenes<span class="nav-pill" id="orders-pill">0</span></button>
       <div class="nav-group-label">Tienda</div>
       <button class="nav-item" onclick="window.open('index.html','_blank')"><span class="ni-icon">🛍️</span> Ver tienda</button>
     </nav>
@@ -529,80 +524,81 @@ input:checked + .tslider:before { transform: translateX(20px); }
       <div class="topbar-right" id="topbar-right"></div>
     </div>
 
-    <!-- ==================== DASHBOARD DE VENTAS ==================== -->
-    <div class="page active content" id="page-dashboard">
-      <!-- Panel de filtros -->
-      <div class="panel" style="margin-bottom: 20px;">
-        <div class="panel-head"><span class="panel-title">📅 Filtrar por fecha de pedido</span></div>
-        <div style="padding: 16px 22px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-          <div><label class="flabel">Desde</label><input type="date" id="date-from" class="finput" style="width: auto;"/></div>
-          <div><label class="flabel">Hasta</label><input type="date" id="date-to" class="finput" style="width: auto;"/></div>
-          <div><button class="btn btn-primary" onclick="applyDateFilter()">Aplicar filtros</button></div>
-          <div><button class="btn btn-ghost" onclick="clearDateFilter()">Limpiar</button></div>
-          <div style="margin-left: auto;"><span class="badge badge-orange">📌 Solo pedidos <strong>entregados</strong> se consideran ventas</span></div>
-        </div>
-      </div>
-
-      <!-- Tarjetas de métricas -->
-      <div class="stats-row" id="sales-stats">
-        <div class="stat-card"><div class="stat-label">Total ventas (Bs.)</div><div class="stat-value accent" id="total-sales">—</div></div>
-        <div class="stat-card"><div class="stat-label">Ganancias brutas (Bs.)</div><div class="stat-value" id="total-profit">—</div></div>
-        <div class="stat-card"><div class="stat-label">Pedidos entregados</div><div class="stat-value" id="orders-count">—</div></div>
-        <div class="stat-card"><div class="stat-label">Ticket promedio (Bs.)</div><div class="stat-value" id="avg-ticket">—</div></div>
-        <div class="stat-card"><div class="stat-label">Margen de ganancia</div><div class="stat-value" id="profit-margin">—</div><div class="stat-sub">sobre ventas</div></div>
-      </div>
-
-      <!-- Top 10 productos -->
-      <div class="panel"><div class="panel-head"><span class="panel-title">🏆 Top 10 productos más vendidos</span></div><div class="table-wrap"><table id="top-products-table"><thead><tr><th>Producto</th><th>Cantidad vendida</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-products-tbody"><tr><td colspan="3"><div class="spin"></div></td></tr></tbody></table></div></div>
-
-      <!-- Top 10 categorías -->
-      <div class="panel"><div class="panel-head"><span class="panel-title">🏷️ Top 10 categorías más vendidas</span></div><div class="table-wrap"><table id="top-categories-table"><thead><tr><th>Categoría</th><th>Unidades vendidas</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-categories-tbody"><tr><td colspan="3"><div class="spin"></div></td></tr></tbody></table></div></div>
-    </div>
-
-    <!-- ==================== PRODUCTOS (EXCLUSIVO) ==================== -->
-    <div class="page content" id="page-products">
-      <div class="panel">
-        <div class="panel-head">
-          <span class="panel-title">Catálogo de productos</span>
-          <div class="toolbar">
-            <div class="search-wrap">
-              <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" class="search-input" id="p-search" placeholder="Buscar…" oninput="renderProductTable()"/>
-            </div>
-            <select class="filter-sel" id="p-cat" onchange="renderProductTable()">
-              <option value="">Todas las categorías</option>
-            </select>
+    <!-- ==================== CONTENEDOR DE PÁGINAS ==================== -->
+    <div id="page-container" class="content" style="position: relative;">
+      <!-- DASHBOARD DE VENTAS -->
+      <div id="dashboard-page" class="page active">
+        <!-- Panel de filtros -->
+        <div class="panel" style="margin-bottom: 20px;">
+          <div class="panel-head"><span class="panel-title">📅 Filtrar por fecha de pedido</span></div>
+          <div style="padding: 16px 22px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+            <div><label class="flabel">Desde</label><input type="date" id="date-from" class="finput" style="width: auto;"/></div>
+            <div><label class="flabel">Hasta</label><input type="date" id="date-to" class="finput" style="width: auto;"/></div>
+            <div><button class="btn btn-primary" onclick="applyDateFilter()">Aplicar filtros</button></div>
+            <div><button class="btn btn-ghost" onclick="clearDateFilter()">Limpiar</button></div>
+            <div style="margin-left: auto;"><span class="badge badge-orange">📌 Solo pedidos <strong>entregados</strong> se consideran ventas</span></div>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Producto</th><th class="hide-sm">Categoría</th><th>Precio</th><th>Activo</th><th>Acciones</th></tr>
-            </thead>
-            <tbody id="prod-tbody"><tr><td colspan="5"><div class="spin"></div></td></tr></tbody>
-          </table>
+
+        <!-- Tarjetas de métricas -->
+        <div class="stats-row" id="sales-stats">
+          <div class="stat-card"><div class="stat-label">Total ventas (Bs.)</div><div class="stat-value accent" id="total-sales">—</div></div>
+          <div class="stat-card"><div class="stat-label">Ganancias brutas (Bs.)</div><div class="stat-value" id="total-profit">—</div></div>
+          <div class="stat-card"><div class="stat-label">Pedidos entregados</div><div class="stat-value" id="orders-count">—</div></div>
+          <div class="stat-card"><div class="stat-label">Ticket promedio (Bs.)</div><div class="stat-value" id="avg-ticket">—</div></div>
+          <div class="stat-card"><div class="stat-label">Margen de ganancia</div><div class="stat-value" id="profit-margin">—</div><div class="stat-sub">sobre ventas</div></div>
+        </div>
+
+        <!-- Top 10 productos -->
+        <div class="panel"><div class="panel-head"><span class="panel-title">🏆 Top 10 productos más vendidos</span></div><div class="table-wrap"><table id="top-products-table"><thead><tr><th>Producto</th><th>Cantidad vendida</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-products-tbody"><tr><td colspan="3"><div class="spin"></div></td></tr></tbody></table></div></div>
+
+        <!-- Top 10 categorías -->
+        <div class="panel"><div class="panel-head"><span class="panel-title">🏷️ Top 10 categorías más vendidas</span></div><div class="table-wrap"><table id="top-categories-table"><thead><tr><th>Categoría</th><th>Unidades vendidas</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-categories-tbody"><tr><td colspan="3"><div class="spin"></div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- PRODUCTOS -->
+      <div id="products-page" class="page">
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Catálogo de productos</span>
+            <div class="toolbar">
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="search-input" id="p-search" placeholder="Buscar…" oninput="renderProductTable()"/>
+              </div>
+              <select class="filter-sel" id="p-cat" onchange="renderProductTable()">
+                <option value="">Todas las categorías</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Producto</th><th class="hide-sm">Categoría</th><th>Precio</th><th>Activo</th><th>Acciones</th></tr></thead>
+              <tbody id="prod-tbody"><tr><td colspan="5"><div class="spin"></div></td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ==================== ÓRDENES (EXCLUSIVO) ==================== -->
-    <div class="page content" id="page-orders">
-      <div class="toolbar" style="margin-bottom:18px;">
-        <select class="filter-sel" id="o-status" onchange="renderOrders()">
-          <option value="">Todos los estados</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="confirmado">Confirmado</option>
-          <option value="entregado">Entregado</option>
-          <option value="cancelado">Cancelado</option>
-        </select>
+      <!-- ÓRDENES -->
+      <div id="orders-page" class="page">
+        <div class="toolbar" style="margin-bottom:18px;">
+          <select class="filter-sel" id="o-status" onchange="renderOrders()">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="entregado">Entregado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div id="orders-list"><div class="spin"></div></div>
       </div>
-      <div id="orders-list"><div class="spin"></div></div>
     </div>
 
   </div>
 </div>
 
-<!-- MODALES (producto y eliminar, con costo) -->
+<!-- MODALES (producto y eliminar) -->
 <div class="overlay" id="prod-modal-ov">
   <div class="modal">
     <div class="modal-head"><h2 id="pf-title">Nuevo producto</h2><button class="btn btn-ghost btn-sm" onclick="closeProdModal()">✕ Cerrar</button></div>
@@ -629,9 +625,7 @@ input:checked + .tslider:before { transform: translateX(20px); }
 <div id="toasts"></div>
 
 <script type="module">
-// ─────────────────────────────────────────────
-// CONFIGURACIÓN (cambiar por tus valores)
-// ─────────────────────────────────────────────
+// ==================== CONFIGURACIÓN ====================
 const SUPABASE_URL = 'https://ysecnphhuessiznsdfof.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZWNucGhodWVzc2l6bnNkZm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTgyOTgsImV4cCI6MjA5MzE5NDI5OH0.nFeRiqEoyALMF0XEiyrxbIN1CgzfXzjfzWNMnSp14Dw';
 const WA_NUMBER     = '56990500542';
@@ -654,7 +648,7 @@ let editId = null, deleteId = null;
 let pendingFiles = [], existingUrls = [];
 let currentDateFrom = '', currentDateTo = '';
 
-// AUTH
+// ==================== AUTH ====================
 window.doLogin = async function() {
   const email = document.getElementById('l-email').value.trim();
   const pass  = document.getElementById('l-pass').value;
@@ -678,20 +672,35 @@ function enterAdmin(user) {
 window.doLogout = async function() { await sb.auth.signOut(); location.reload(); };
 (async()=>{ const { data:{session} } = await sb.auth.getSession(); if (session) enterAdmin(session.user); })();
 
-// NAVIGACIÓN
-window.goTo = function(page, el) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  if(el) el.classList.add('active');
-  const titles = {dashboard:'Dashboard de ventas', products:'Productos', orders:'Órdenes'};
-  document.getElementById('page-title').textContent = titles[page];
+// ==================== NAVEGACIÓN ====================
+function showPage(pageId) {
+  document.querySelectorAll('#page-container .page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  const titles = { dashboard:'Dashboard de ventas', products:'Productos', orders:'Órdenes' };
+  document.getElementById('page-title').textContent = titles[pageId === 'dashboard-page' ? 'dashboard' : (pageId === 'products-page' ? 'products' : 'orders')];
   const tr = document.getElementById('topbar-right');
-  tr.innerHTML = page==='products' ? `<button class="btn btn-primary btn-sm" onclick="openProdModal()">➕ Nuevo producto</button>` : '';
+  tr.innerHTML = pageId === 'products-page' ? `<button class="btn btn-primary btn-sm" onclick="openProdModal()">➕ Nuevo producto</button>` : '';
   document.getElementById('sidebar').classList.remove('open');
+}
+
+window.goTo = function(page, el) {
+  let pageId = '';
+  if (page === 'dashboard') pageId = 'dashboard-page';
+  else if (page === 'products') pageId = 'products-page';
+  else if (page === 'orders') pageId = 'orders-page';
+  if (!pageId) return;
+  showPage(pageId);
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
 };
 
-// CARGA DE DATOS
+// Asignar eventos a botones del menú
+document.querySelectorAll('.nav-item').forEach(btn => {
+  const page = btn.id.replace('nav-', '');
+  btn.onclick = () => goTo(page, btn);
+});
+
+// ==================== CARGA DATOS ====================
 async function loadAll() { await Promise.all([loadProducts(), loadOrders()]); }
 async function loadProducts() {
   const { data } = await sb.from('productos').select('*').order('created_at',{ascending:false});
@@ -710,7 +719,7 @@ async function loadOrders() {
   document.getElementById('orders-pill').classList.toggle('show', pending>0);
 }
 
-// FILTROS DE FECHA (solo dashboard)
+// ==================== DASHBOARD ====================
 window.applyDateFilter = function() {
   currentDateFrom = document.getElementById('date-from').value;
   currentDateTo = document.getElementById('date-to').value;
@@ -724,7 +733,6 @@ window.clearDateFilter = function() {
   renderSalesDashboard();
 };
 
-// DASHBOARD DE VENTAS (solo órdenes entregadas + filtros)
 function renderSalesDashboard() {
   if (!products.length || !orders.length) return;
   let deliveredOrders = orders.filter(o => o.estado === 'entregado');
@@ -774,8 +782,8 @@ function renderSalesDashboard() {
   }
   const topProducts = Array.from(prodSales.entries()).map(([nombre, data]) => ({ nombre, ...data })).sort((a,b)=>b.totalVentas - a.totalVentas).slice(0,10);
   const tbodyProd = document.getElementById('top-products-tbody');
-  if (topProducts.length === 0) tbodyProd.innerHTML = '</table><td colspan="3"><div class="empty">Sin ventas en el período</div></td></tr>';
-  else tbodyProd.innerHTML = topProducts.map(p => `<tr><td><strong>${p.nombre}</strong></td><td>${p.cantidad} und.</td><td>Bs. ${fmt(p.totalVentas)}</td>`).join('');
+  if (topProducts.length === 0) tbodyProd.innerHTML = '<tr><td colspan="3"><div class="empty">Sin ventas en el período</div></td></tr>';
+  else tbodyProd.innerHTML = topProducts.map(p => `<tr><td><strong>${p.nombre}</strong></div><td>${p.cantidad} und.</div><td>Bs. ${fmt(p.totalVentas)}</div></tr>`).join('');
 
   // Top categorías
   const catSales = new Map();
@@ -794,24 +802,24 @@ function renderSalesDashboard() {
   }
   const topCats = Array.from(catSales.entries()).map(([cat, data]) => ({ categoria: cat, ...data })).sort((a,b)=>b.totalVentas - a.totalVentas).slice(0,10);
   const tbodyCat = document.getElementById('top-categories-tbody');
-  if (topCats.length === 0) tbodyCat.innerHTML = '<tr><td colspan="3"><div class="empty">Sin ventas en el período</div></td></tr>';
-  else tbodyCat.innerHTML = topCats.map(c => `<tr><td><span class="badge badge-orange">${c.categoria}</span></td><td>${c.cantidad} und.</td><td>Bs. ${fmt(c.totalVentas)}</td>`).join('');
+  if (topCats.length === 0) tbodyCat.innerHTML = '<tr><td colspan="3"><div class="empty">Sin ventas en el período</div><tr></tr>';
+  else tbodyCat.innerHTML = topCats.map(c => `<tr><td><span class="badge badge-orange">${c.categoria}</span></div></td><td>${c.cantidad} und.</div><td>Bs. ${fmt(c.totalVentas)}</div></tr>`).join('');
 }
 
-// PRODUCTOS (íntegro, sin cambios)
+// ==================== PRODUCTOS ====================
 function updateCats() {
   const cats = [...new Set(products.map(p=>p.categoria).filter(Boolean))].sort();
   const sel = document.getElementById('p-cat');
-  const dl  = document.getElementById('cats-dl');
+  const dl = document.getElementById('cats-dl');
   sel.innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c=>`<option>${c}</option>`).join('');
-  dl.innerHTML  = cats.map(c=>`<option value="${c}">`).join('');
+  dl.innerHTML = cats.map(c=>`<option value="${c}">`).join('');
 }
 window.renderProductTable = function() {
-  const q   = document.getElementById('p-search').value.toLowerCase();
+  const q = document.getElementById('p-search').value.toLowerCase();
   const cat = document.getElementById('p-cat').value;
   const list = products.filter(p=> (!q||p.nombre?.toLowerCase().includes(q)||p.descripcion?.toLowerCase().includes(q)) && (!cat||p.categoria===cat));
   const tbody = document.getElementById('prod-tbody');
-  if (!list.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty">Sin resultados</div></td>`; return; }
+  if (!list.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty">Sin resultados</div></td></tr>`; return; }
   tbody.innerHTML = list.map(p=>{
     const img = p.imagenes?.[0];
     return `<tr>
@@ -830,7 +838,7 @@ window.toggleActive = async function(id, val) {
   renderSalesDashboard();
 };
 
-// MODAL PRODUCTOS (con costo)
+// MODAL PRODUCTO
 window.openProdModal = function(id) {
   pendingFiles=[]; existingUrls=[];
   document.getElementById('img-preview').innerHTML='';
@@ -901,7 +909,7 @@ window.saveProduct = async function() {
   btn.disabled=false; btn.textContent='Guardar producto';
 };
 
-// ELIMINAR
+// ELIMINAR PRODUCTO
 window.openDelModal = function(id, name) { deleteId=id; document.getElementById('del-name').textContent=name; document.getElementById('del-modal-ov').classList.add('open'); };
 window.closeDelModal = ()=> document.getElementById('del-modal-ov').classList.remove('open');
 document.getElementById('del-modal-ov').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeDelModal(); });
@@ -915,7 +923,7 @@ window.confirmDelete = async function() {
   btn.disabled=false; btn.textContent='Eliminar';
 };
 
-// ÓRDENES (íntegro)
+// ==================== ÓRDENES ====================
 const SB = {pendiente:'badge-orange',confirmado:'badge-green',entregado:'badge-gray',cancelado:'badge-red'};
 window.renderOrders = function() {
   const status = document.getElementById('o-status').value;
@@ -938,6 +946,9 @@ window.updateStatus = async function(id, status) {
   document.getElementById('orders-pill').classList.toggle('show', pending>0);
   renderSalesDashboard();
 };
+
+// Inicializar mostrando Dashboard
+showPage('dashboard-page');
 </script>
 </body>
 </html>
