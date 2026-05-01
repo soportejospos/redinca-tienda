@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 /* ═══════════════════════════════════════════════
-   RESET & BASE (idéntico al original)
+   RESET Y ESTILOS BASE (SIN CAMBIOS)
 ═══════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
@@ -248,7 +248,7 @@ body {
 .btn-full { width: 100%; justify-content: center; }
 .menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 6px; }
 
-/* STATS CARDS (solo para dashboard) */
+/* PANELS Y TARJETAS (solo dashboard) */
 .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 28px; }
 .stat-card {
   background: var(--glass);
@@ -265,7 +265,6 @@ body {
 .stat-value.accent { color: var(--accent); }
 .stat-sub { font-size: 12px; color: var(--faint); margin-top: 5px; }
 
-/* PANELS (generales) */
 .panel {
   background: var(--glass);
   backdrop-filter: blur(20px);
@@ -286,7 +285,7 @@ body {
 }
 .panel-title { font-size: 16px; font-weight: 700; }
 
-/* TABLAS (mejoradas solo para dashboard, pero aplican a todas por coherencia) */
+/* TABLAS MEJORADAS (más separación y filas alternadas) */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th {
@@ -307,7 +306,6 @@ td {
   vertical-align: middle;
 }
 tr:last-child td { border-bottom: none; }
-/* Filas alternas para mejor legibilidad */
 tbody tr:nth-child(even) td { background-color: rgba(0,0,0,0.01); }
 tbody tr:hover td { background: rgba(0,0,0,0.02); }
 
@@ -318,7 +316,6 @@ tbody tr:hover td { background: rgba(0,0,0,0.02); }
 .prod-name { font-weight: 600; }
 .prod-ref { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-/* BADGES */
 .badge {
   display: inline-block; padding: 3px 10px;
   border-radius: 99px; font-size: 12px; font-weight: 600;
@@ -327,7 +324,6 @@ tbody tr:hover td { background: rgba(0,0,0,0.02); }
 .badge-green  { background: rgba(48,209,88,0.1); color: #1a9e3f; border: 1px solid rgba(48,209,88,0.25); }
 .badge-gray   { background: rgba(0,0,0,0.05); color: var(--muted); border: 1px solid var(--border); }
 
-/* TOGGLE */
 .toggle { position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer; }
 .toggle input { opacity: 0; width: 0; height: 0; }
 .tslider {
@@ -533,7 +529,7 @@ input:checked + .tslider:before { transform: translateX(20px); }
       <div class="topbar-right" id="topbar-right"></div>
     </div>
 
-    <!-- ==================== DASHBOARD DE VENTAS (solo aquí) ==================== -->
+    <!-- ==================== DASHBOARD DE VENTAS ==================== -->
     <div class="page active content" id="page-dashboard">
       <!-- Panel de filtros -->
       <div class="panel" style="margin-bottom: 20px;">
@@ -557,13 +553,13 @@ input:checked + .tslider:before { transform: translateX(20px); }
       </div>
 
       <!-- Top 10 productos -->
-      <div class="panel"><div class="panel-head"><span class="panel-title">🏆 Top 10 productos más vendidos</span></div><div class="table-wrap"><table id="top-products-table"><thead><tr><th>Producto</th><th>Cantidad vendida</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-products-tbody"><tr><td colspan="3"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+      <div class="panel"><div class="panel-head"><span class="panel-title">🏆 Top 10 productos más vendidos</span></div><div class="table-wrap"><table id="top-products-table"><thead><tr><th>Producto</th><th>Cantidad vendida</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-products-tbody"><tr><td colspan="3"><div class="spin"></div></td></tr></tbody></table></div></div>
 
       <!-- Top 10 categorías -->
-      <div class="panel"><div class="panel-head"><span class="panel-title">🏷️ Top 10 categorías más vendidas</span></div><div class="table-wrap"><table id="top-categories-table"><thead><tr><th>Categoría</th><th>Unidades vendidas</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-categories-tbody"><tr><td colspan="3"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+      <div class="panel"><div class="panel-head"><span class="panel-title">🏷️ Top 10 categorías más vendidas</span></div><div class="table-wrap"><table id="top-categories-table"><thead><tr><th>Categoría</th><th>Unidades vendidas</th><th>Total ventas (Bs.)</th></tr></thead><tbody id="top-categories-tbody"><tr><td colspan="3"><div class="spin"></div></td></tr></tbody></table></div></div>
     </div>
 
-    <!-- ==================== PRODUCTOS (EXACTAMENTE ORIGINAL) ==================== -->
+    <!-- ==================== PRODUCTOS (EXCLUSIVO) ==================== -->
     <div class="page content" id="page-products">
       <div class="panel">
         <div class="panel-head">
@@ -589,7 +585,7 @@ input:checked + .tslider:before { transform: translateX(20px); }
       </div>
     </div>
 
-    <!-- ==================== ÓRDENES (EXACTAMENTE ORIGINAL) ==================== -->
+    <!-- ==================== ÓRDENES (EXCLUSIVO) ==================== -->
     <div class="page content" id="page-orders">
       <div class="toolbar" style="margin-bottom:18px;">
         <select class="filter-sel" id="o-status" onchange="renderOrders()">
@@ -606,7 +602,7 @@ input:checked + .tslider:before { transform: translateX(20px); }
   </div>
 </div>
 
-<!-- MODALES (producto y eliminar, con campo costo) -->
+<!-- MODALES (producto y eliminar, con costo) -->
 <div class="overlay" id="prod-modal-ov">
   <div class="modal">
     <div class="modal-head"><h2 id="pf-title">Nuevo producto</h2><button class="btn btn-ghost btn-sm" onclick="closeProdModal()">✕ Cerrar</button></div>
@@ -682,7 +678,7 @@ function enterAdmin(user) {
 window.doLogout = async function() { await sb.auth.signOut(); location.reload(); };
 (async()=>{ const { data:{session} } = await sb.auth.getSession(); if (session) enterAdmin(session.user); })();
 
-// NAVIGATION
+// NAVIGACIÓN
 window.goTo = function(page, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -695,7 +691,7 @@ window.goTo = function(page, el) {
   document.getElementById('sidebar').classList.remove('open');
 };
 
-// LOAD DATA
+// CARGA DE DATOS
 async function loadAll() { await Promise.all([loadProducts(), loadOrders()]); }
 async function loadProducts() {
   const { data } = await sb.from('productos').select('*').order('created_at',{ascending:false});
@@ -714,7 +710,7 @@ async function loadOrders() {
   document.getElementById('orders-pill').classList.toggle('show', pending>0);
 }
 
-// FILTROS DE FECHA
+// FILTROS DE FECHA (solo dashboard)
 window.applyDateFilter = function() {
   currentDateFrom = document.getElementById('date-from').value;
   currentDateTo = document.getElementById('date-to').value;
@@ -728,7 +724,7 @@ window.clearDateFilter = function() {
   renderSalesDashboard();
 };
 
-// DASHBOARD (solo órdenes entregadas + filtros)
+// DASHBOARD DE VENTAS (solo órdenes entregadas + filtros)
 function renderSalesDashboard() {
   if (!products.length || !orders.length) return;
   let deliveredOrders = orders.filter(o => o.estado === 'entregado');
@@ -778,8 +774,8 @@ function renderSalesDashboard() {
   }
   const topProducts = Array.from(prodSales.entries()).map(([nombre, data]) => ({ nombre, ...data })).sort((a,b)=>b.totalVentas - a.totalVentas).slice(0,10);
   const tbodyProd = document.getElementById('top-products-tbody');
-  if (topProducts.length === 0) tbodyProd.innerHTML = '<tr><td colspan="3"><div class="empty">Sin ventas en el período</div></td></tr>';
-  else tbodyProd.innerHTML = topProducts.map(p => `<tr><td><strong>${p.nombre}</strong></td><td>${p.cantidad} und.</td><td>Bs. ${fmt(p.totalVentas)}</td></tr>`).join('');
+  if (topProducts.length === 0) tbodyProd.innerHTML = '</table><td colspan="3"><div class="empty">Sin ventas en el período</div></td></tr>';
+  else tbodyProd.innerHTML = topProducts.map(p => `<tr><td><strong>${p.nombre}</strong></td><td>${p.cantidad} und.</td><td>Bs. ${fmt(p.totalVentas)}</td>`).join('');
 
   // Top categorías
   const catSales = new Map();
@@ -799,7 +795,7 @@ function renderSalesDashboard() {
   const topCats = Array.from(catSales.entries()).map(([cat, data]) => ({ categoria: cat, ...data })).sort((a,b)=>b.totalVentas - a.totalVentas).slice(0,10);
   const tbodyCat = document.getElementById('top-categories-tbody');
   if (topCats.length === 0) tbodyCat.innerHTML = '<tr><td colspan="3"><div class="empty">Sin ventas en el período</div></td></tr>';
-  else tbodyCat.innerHTML = topCats.map(c => `<tr><td><span class="badge badge-orange">${c.categoria}</span></td><td>${c.cantidad} und.</td><td>Bs. ${fmt(c.totalVentas)}</td></tr>`).join('');
+  else tbodyCat.innerHTML = topCats.map(c => `<tr><td><span class="badge badge-orange">${c.categoria}</span></td><td>${c.cantidad} und.</td><td>Bs. ${fmt(c.totalVentas)}</td>`).join('');
 }
 
 // PRODUCTOS (íntegro, sin cambios)
@@ -815,7 +811,7 @@ window.renderProductTable = function() {
   const cat = document.getElementById('p-cat').value;
   const list = products.filter(p=> (!q||p.nombre?.toLowerCase().includes(q)||p.descripcion?.toLowerCase().includes(q)) && (!cat||p.categoria===cat));
   const tbody = document.getElementById('prod-tbody');
-  if (!list.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🔍</div><h3>Sin resultados</h3></div></td></tr>`; return; }
+  if (!list.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty">Sin resultados</div></td>`; return; }
   tbody.innerHTML = list.map(p=>{
     const img = p.imagenes?.[0];
     return `<tr>
@@ -833,6 +829,8 @@ window.toggleActive = async function(id, val) {
   toast(val?'Activado':'Desactivado','ok');
   renderSalesDashboard();
 };
+
+// MODAL PRODUCTOS (con costo)
 window.openProdModal = function(id) {
   pendingFiles=[]; existingUrls=[];
   document.getElementById('img-preview').innerHTML='';
@@ -902,6 +900,8 @@ window.saveProduct = async function() {
   } catch(e) { toast('Error: '+e.message,'err'); }
   btn.disabled=false; btn.textContent='Guardar producto';
 };
+
+// ELIMINAR
 window.openDelModal = function(id, name) { deleteId=id; document.getElementById('del-name').textContent=name; document.getElementById('del-modal-ov').classList.add('open'); };
 window.closeDelModal = ()=> document.getElementById('del-modal-ov').classList.remove('open');
 document.getElementById('del-modal-ov').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeDelModal(); });
@@ -925,7 +925,7 @@ window.renderOrders = function() {
   el.innerHTML = list.map(o=>{
     const items = Array.isArray(o.productos)?o.productos:[];
     const waMsg = encodeURIComponent(`Hola ${o.cliente_nombre}, tu pedido está ${o.estado}.`);
-    return `<div class="order-card"><div class="order-top"><div><div class="order-id">#${(o.id||'').slice(-8)} · ${fmtDate(o.created_at)}</div><div class="order-name">${o.cliente_nombre}</div><div class="order-tel">📞 ${o.cliente_telefono}</div>${o.cliente_nota?`<div>📝 ${o.cliente_nota}</div>`:''}</div><span class="badge ${SB[o.estado]||'badge-gray'}">${o.estado}</span></div><div class="order-body">${items.map(i=>`<div class="order-line"><span>${i.nombre} × ${i.qty}</span>Bs. ${fmt(i.precio*i.qty)}</div>`).join('')}<div class="order-total">Total: Bs. ${fmt(o.total||0)}</div></div><div class="order-foot"><select class="status-select" onchange="updateStatus('${o.id}',this.value)">${['pendiente','confirmado','entregado','cancelado'].map(s=>`<option value="${s}" ${o.estado===s?'selected':''}>${s}</option>`).join('')}</select><a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" class="btn btn-ghost btn-sm">💬 WhatsApp</a></div></div>`;
+    return `<div class="order-card"><div class="order-top"><div><div class="order-id">#${(o.id||'').slice(-8)} · ${fmtDate(o.created_at)}</div><div class="order-name">${o.cliente_nombre}</div><div class="order-tel">📞 ${o.cliente_telefono}</div>${o.cliente_nota?`<div>📝 ${o.cliente_nota}</div>`:''}</div><span class="badge ${SB[o.estado]||'badge-gray'}">${o.estado}</span></div><div class="order-body"><div>${items.map(i=>`<div class="order-line"><span>${i.nombre} × ${i.qty}</span>Bs. ${fmt(i.precio*i.qty)}</div>`).join('')}</div><div class="order-total">Total: Bs. ${fmt(o.total||0)}</div></div><div class="order-foot"><select class="status-select" onchange="updateStatus('${o.id}',this.value)">${['pendiente','confirmado','entregado','cancelado'].map(s=>`<option value="${s}" ${o.estado===s?'selected':''}>${s}</option>`).join('')}</select><a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" class="btn btn-ghost btn-sm">💬 WhatsApp</a></div></div>`;
   }).join('');
 };
 window.updateStatus = async function(id, status) {
