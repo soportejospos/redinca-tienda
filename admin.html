@@ -88,6 +88,27 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 
+/* Theme Toggle Button General */
+.theme-toggle {
+  background: none; border: none; cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%; transition: all 0.2s;
+  color: var(--text);
+}
+.theme-toggle:hover { background: var(--border2); }
+
+/* Theme Toggle Flotante para el Login */
+.theme-toggle-login {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  z-index: 1001;
+}
+
 /* ═══════════════════════════════════════════════
    BACKGROUNDS & NOISE
 ═══════════════════════════════════════════════ */
@@ -291,15 +312,6 @@ body {
 .page-title  { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
 .topbar-right { display: flex; align-items: center; gap: 15px; }
 
-/* Theme Toggle Button */
-.theme-toggle {
-  background: none; border: none; cursor: pointer; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 50%; transition: background 0.2s;
-  color: var(--text);
-}
-.theme-toggle:hover { background: var(--border2); }
-
 .content { padding: 28px; max-width: 1200px; }
 
 /* ═══════════════════════════════════════════════
@@ -485,22 +497,31 @@ input:checked + .tslider:before { transform: translateX(20px); }
      LOGIN
 ══════════════════════════════════════ -->
 <div id="login-screen">
+  <!-- Botón de tema flotante para la pantalla de inicio -->
+  <button class="theme-toggle theme-toggle-login" onclick="toggleTheme()" title="Cambiar tema">
+    <span class="theme-icon">🌙</span>
+  </button>
+
   <div class="login-card">
     <div class="login-brand">
       <div class="login-logo">R</div>
       <h1>REDINCA <em>2025</em></h1>
       <p>Panel de administración</p>
     </div>
-    <div class="login-field">
-      <label>Correo electrónico</label>
-      <input type="email" id="l-email" placeholder="admin@redinca.com" autocomplete="username"/>
-    </div>
-    <div class="login-field">
-      <label>Contraseña</label>
-      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter') doLogin()"/>
-    </div>
-    <button class="login-btn" onclick="doLogin()" id="l-btn">Iniciar sesión</button>
+    
+    <!-- Envolvemos los inputs en un <form> para habilitar el submit con Enter nativo -->
+    <form id="login-form" onsubmit="event.preventDefault(); doLogin();">
+      <div class="login-field">
+        <label>Correo electrónico</label>
+        <input type="email" id="l-email" placeholder="admin@redinca.com" autocomplete="username" required/>
+      </div>
+      <div class="login-field">
+        <label>Contraseña</label>
+        <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" required/>
+      </div>
+      <button type="submit" class="login-btn" id="l-btn">Iniciar sesión</button>
+    </form>
+    
     <div class="login-error" id="l-err">Correo o contraseña incorrectos</div>
   </div>
 </div>
@@ -563,8 +584,10 @@ input:checked + .tslider:before { transform: translateX(20px); }
         <span class="page-title" id="page-title">Dashboard</span>
       </div>
       <div class="topbar-right">
-        <!-- BOTÓN DE TEMA -->
-        <button class="theme-toggle" onclick="toggleTheme()" id="theme-icon" title="Cambiar tema">🌙</button>
+        <!-- BOTÓN DE TEMA (DASHBOARD) -->
+        <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+          <span class="theme-icon">🌙</span>
+        </button>
         <div id="topbar-right-actions"></div>
       </div>
     </div>
@@ -713,7 +736,7 @@ input:checked + .tslider:before { transform: translateX(20px); }
 <div id="toasts"></div>
 
 <!-- ══════════════════════════════════════
-     JAVASCRIPT (COMPLETO Y ORIGINAL)
+     JAVASCRIPT
 ══════════════════════════════════════ -->
 <script type="module">
 // ─────────────────────────────────────────────
@@ -724,12 +747,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const WA_NUMBER     = '56990500542';
 
 // ─────────────────────────────────────────────
-// TEMA CLARO/OSCURO (LÓGICA)
+// TEMA CLARO/OSCURO (LÓGICA ACTUALIZADA)
 // ─────────────────────────────────────────────
 const savedTheme = localStorage.getItem('redinca_theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
+
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('theme-icon').textContent = savedTheme === 'light' ? '🌙' : '☀️';
+    updateThemeIcons(savedTheme);
 });
 
 window.toggleTheme = function() {
@@ -737,8 +761,16 @@ window.toggleTheme = function() {
     const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', nextTheme);
     localStorage.setItem('redinca_theme', nextTheme);
-    document.getElementById('theme-icon').textContent = nextTheme === 'light' ? '🌙' : '☀️';
+    updateThemeIcons(nextTheme);
 };
+
+// Sincroniza todos los iconos de tema (login y dashboard)
+function updateThemeIcons(theme) {
+    const icon = theme === 'light' ? '🌙' : '☀️';
+    document.querySelectorAll('.theme-icon').forEach(el => {
+        el.textContent = icon;
+    });
+}
 
 // ─────────────────────────────────────────────
 // SUPABASE INIT
@@ -769,21 +801,29 @@ let editId = null, deleteId = null;
 let pendingFiles = [], existingUrls = [];
 
 // ─────────────────────────────────────────────
-// AUTH
+// AUTH (ACTUALIZADO PARA FORM SUBMIT)
 // ─────────────────────────────────────────────
 window.doLogin = async function() {
   const email = document.getElementById('l-email').value.trim();
   const pass  = document.getElementById('l-pass').value;
   const btn   = document.getElementById('l-btn');
   const err   = document.getElementById('l-err');
+  
   if (!email || !pass) { showErr('Completá email y contraseña'); return; }
-  btn.disabled = true; btn.textContent = 'Verificando…';
+  
+  btn.disabled = true; 
+  btn.textContent = 'Verificando…';
   err.classList.remove('show');
+  
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  
   if (error) {
     showErr('Correo o contraseña incorrectos');
-    btn.disabled = false; btn.textContent = 'Iniciar sesión'; return;
+    btn.disabled = false; 
+    btn.textContent = 'Iniciar sesión'; 
+    return;
   }
+  
   enterAdmin(data.user);
 };
 
