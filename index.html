@@ -201,8 +201,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .ctotal{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
 .ctlabel{font-size:12px;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase;}
 .ctval{font-family:var(--fontD);font-size:28px;color:var(--red);}
-.cform{padding:0 22px 22px;display:none;}
-.cform.show{display:block;}
 .cftitle{font-family:var(--fontD);font-size:17px;font-weight:400;color:var(--text2);margin-bottom:14px;padding-top:14px;border-top:1px solid var(--border);}
 .cfield{margin-bottom:12px;}
 .clabel{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;}
@@ -346,22 +344,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <h2>Carrito</h2>
     <button class="btnclose" onclick="closeCart()">✕</button>
   </div>
+  <!-- Zona scrolleable: items + formulario juntos -->
   <div class="citems" id="citems"></div>
-  <div class="cform" id="cform">
-    <p class="cftitle">Tus datos para el pedido</p>
-    <div class="cfield"><label class="clabel">Nombre completo *</label><input type="text" id="cf-nombre" class="cinput" placeholder="Ej: Juan Pérez"/></div>
-    <div class="cfield"><label class="clabel">Teléfono / WhatsApp *</label><input type="tel" id="cf-tel" class="cinput" placeholder="Ej: 0414-1234567"/></div>
-    <div class="cfield"><label class="clabel">Correo electrónico *</label><input type="email" id="cf-email" class="cinput" placeholder="Ej: juan@correo.com"/></div>
-    <div class="cfield"><label class="clabel">Nota (opcional)</label><textarea id="cf-nota" class="ctextarea" placeholder="Modelo del vehículo, consulta…"></textarea></div>
+
+  <!-- Footer fijo: total + confirmar + vaciar -->
+  <div class="cfoot" id="cfoot" style="display:none">
+    <div class="ctotal">
+      <span class="ctlabel">Total estimado</span>
+      <span class="ctval" id="ctval">Bs. 0,00</span>
+    </div>
     <button class="btnprimary" onclick="submitOrder()" id="submit-btn">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       Confirmar pedido
     </button>
     <p class="chint">Tu pedido llega por WhatsApp y email para confirmar</p>
-  </div>
-  <div class="cfoot" id="cfoot" style="display:none">
-    <div class="ctotal"><span class="ctlabel">Total estimado</span><span class="ctval" id="ctval">Bs. 0,00</span></div>
-    <button class="btnprimary" onclick="showCheckout()" style="margin-bottom:8px">Proceder al pedido →</button>
     <button class="bclear" onclick="clearCart()">Vaciar carrito</button>
   </div>
 </div>
@@ -603,13 +599,18 @@ function closeCart() {
 function renderCart() {
   var items = cGet();
   var el = document.getElementById('citems');
+  var foot = document.getElementById('cfoot');
   if (!items.length) {
     el.innerHTML = '<div class="empty"><div class="eicon" style="font-size:34px;opacity:.18">🛒</div><p style="color:var(--faint)">El carrito está vacío</p></div>';
-    document.getElementById('cfoot').style.display = 'none';
-    document.getElementById('cform').classList.remove('show');
+    foot.style.display = 'none';
     return;
   }
-  document.getElementById('cfoot').style.display = '';
+  // Guardar valores actuales de campos si existen en el DOM
+  var vNombre  = (document.getElementById('cf-nombre')  || {value:''}).value;
+  var vTel     = (document.getElementById('cf-tel')     || {value:''}).value;
+  var vEmail   = (document.getElementById('cf-email')   || {value:''}).value;
+  var vNota    = (document.getElementById('cf-nota')    || {value:''}).value;
+  // Items
   var html = '';
   items.forEach(function(i) {
     html +=
@@ -627,16 +628,35 @@ function renderCart() {
         '</div>'+
       '</div>';
   });
+  // Formulario siempre visible debajo de los items
+  html +=
+    '<div style="padding:4px 0 8px;">'+
+      '<p class="cftitle">Tus datos para el pedido</p>'+
+      '<div class="cfield">'+
+        '<label class="clabel">Nombre completo *</label>'+
+        '<input type="text" id="cf-nombre" class="cinput" placeholder="Ej: Juan Pérez" value="'+vNombre+'"/>'+
+      '</div>'+
+      '<div class="cfield">'+
+        '<label class="clabel">Teléfono / WhatsApp *</label>'+
+        '<input type="tel" id="cf-tel" class="cinput" placeholder="Ej: 0414-1234567" value="'+vTel+'"/>'+
+      '</div>'+
+      '<div class="cfield">'+
+        '<label class="clabel">Correo electrónico *</label>'+
+        '<input type="email" id="cf-email" class="cinput" placeholder="Ej: juan@correo.com" value="'+vEmail+'"/>'+
+      '</div>'+
+      '<div class="cfield">'+
+        '<label class="clabel">Nota (opcional)</label>'+
+        '<textarea id="cf-nota" class="ctextarea" placeholder="Modelo del vehículo, consulta…">'+vNota+'</textarea>'+
+      '</div>'+
+    '</div>';
   el.innerHTML = html;
   document.getElementById('ctval').textContent = 'Bs. '+fmt(cTotal());
+  foot.style.display = '';
 }
 function updQty(id, q) { if(q<1){cRemove(id);}else{cQty(id,q);} renderCart(); }
 function rmItem(id)    { cRemove(id); renderCart(); }
 function clearCart()   { if(confirm('¿Vaciar el carrito?')){ cClear(); renderCart(); } }
-function showCheckout(){
-  document.getElementById('cform').classList.add('show');
-  document.getElementById('cfoot').style.display = 'none';
-}
+
 
 // ── SUBMIT ORDER ──────────────────────────
 function submitOrder() {
@@ -644,9 +664,13 @@ function submitOrder() {
   var telefono = document.getElementById('cf-tel').value.trim();
   var email    = document.getElementById('cf-email').value.trim();
   var nota     = document.getElementById('cf-nota').value.trim();
-  if (!nombre || !telefono || !email) { toast('Nombre, teléfono y correo son obligatorios', 'err'); return; }
+  if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+  if (!telefono) { toast('El teléfono es obligatorio', 'err'); return; }
+  var telDigits = telefono.replace(/\D/g,'');
+  if (telDigits.length < 7) { toast('Ingresá un teléfono válido (mínimo 7 dígitos)', 'err'); return; }
+  if (!email) { toast('El correo electrónico es obligatorio', 'err'); return; }
   var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) { toast('Ingresá un correo electrónico válido', 'err'); return; }
+  if (!emailRegex.test(email)) { toast('Ingresá un correo electrónico válido (ej: juan@correo.com)', 'err'); return; }
   var btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Enviando…';
   var items  = cGet();
@@ -694,10 +718,11 @@ function submitOrder() {
     window.open('https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(msg),'_blank');
 
     cClear(); closeCart();
-    document.getElementById('cf-nombre').value='';
-    document.getElementById('cf-tel').value='';
-    document.getElementById('cf-email').value='';
-    document.getElementById('cf-nota').value='';
+    // Limpiar campos si aún están en el DOM
+    ['cf-nombre','cf-tel','cf-email','cf-nota'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
     toast('¡Pedido enviado! Te contactaremos pronto.','ok');
     btn.disabled = false; btn.textContent = 'Confirmar pedido';
   });
