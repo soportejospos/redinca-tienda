@@ -351,6 +351,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <p class="cftitle">Tus datos para el pedido</p>
     <div class="cfield"><label class="clabel">Nombre completo *</label><input type="text" id="cf-nombre" class="cinput" placeholder="Ej: Juan Pérez"/></div>
     <div class="cfield"><label class="clabel">Teléfono / WhatsApp *</label><input type="tel" id="cf-tel" class="cinput" placeholder="Ej: 0414-1234567"/></div>
+    <div class="cfield"><label class="clabel">Correo electrónico *</label><input type="email" id="cf-email" class="cinput" placeholder="Ej: juan@correo.com"/></div>
     <div class="cfield"><label class="clabel">Nota (opcional)</label><textarea id="cf-nota" class="ctextarea" placeholder="Modelo del vehículo, consulta…"></textarea></div>
     <button class="btnprimary" onclick="submitOrder()" id="submit-btn">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -375,9 +376,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 var SUPABASE_URL  = 'https://ysecnphhuessiznsdfof.supabase.co';
 var SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZWNucGhodWVzc2l6bnNkZm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTgyOTgsImV4cCI6MjA5MzE5NDI5OH0.nFeRiqEoyALMF0XEiyrxbIN1CgzfXzjfzWNMnSp14Dw';
 var WA_NUMBER     = '56990500542';
-var EJS_SVC       = 'TU_SERVICE_ID';
-var EJS_TPL       = 'TU_TEMPLATE_ID';
-var EJS_KEY       = 'TU_PUBLIC_KEY';
+var EJS_SVC       = 'service_xq6elgo';
+var EJS_TPL       = 'template_sxweb93';        // Template para VOS (nuevo pedido)
+var EJS_TPL_CLI   = 'template_fi9w54b';   // Template para el CLIENTE (confirmacion y estados)
+var EJS_KEY       = 'aasfUi1Av5-qT3E8O';
 // ──────────────────────────────────────────────────────
 
 var sb;
@@ -640,8 +642,11 @@ function showCheckout(){
 function submitOrder() {
   var nombre   = document.getElementById('cf-nombre').value.trim();
   var telefono = document.getElementById('cf-tel').value.trim();
+  var email    = document.getElementById('cf-email').value.trim();
   var nota     = document.getElementById('cf-nota').value.trim();
-  if (!nombre || !telefono) { toast('Nombre y teléfono son obligatorios', 'err'); return; }
+  if (!nombre || !telefono || !email) { toast('Nombre, teléfono y correo son obligatorios', 'err'); return; }
+  var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) { toast('Ingresá un correo electrónico válido', 'err'); return; }
   var btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Enviando…';
   var items  = cGet();
@@ -651,7 +656,7 @@ function submitOrder() {
   // Guardar en Supabase
   sb.from('ordenes').insert([{
     cliente_nombre:nombre, cliente_telefono:telefono,
-    cliente_nota:nota, productos:items, total:total, estado:'pendiente'
+    cliente_email:email, cliente_nota:nota, productos:items, total:total, estado:'pendiente'
   }]).select().single()
   .then(function(r){ if (!r.error && r.data) ordId = r.data.id; })
   .catch(function(){})
@@ -662,8 +667,23 @@ function submitOrder() {
         var linEmail = items.map(function(i){ return i.nombre+' x'+i.qty+' — Bs. '+fmt(i.precio*i.qty); }).join('\n');
         emailjs.send(EJS_SVC, EJS_TPL, {
           orden_id:ordId, cliente_nombre:nombre, cliente_telefono:telefono,
-          cliente_nota:nota||'—', productos:linEmail,
+          cliente_email:email, cliente_nota:nota||'—', productos:linEmail,
           total:'Bs. '+fmt(total), fecha:new Date().toLocaleString('es-VE')
+        });
+      }
+    } catch(e) {}
+
+    // EmailJS — confirmacion al cliente
+    try {
+      if (window.emailjs && EJS_TPL_CLI !== 'TU_TEMPLATE_CLIENTE') {
+        emailjs.send(EJS_SVC, EJS_TPL_CLI, {
+          orden_id:ordId,
+          cliente_nombre:nombre,
+          cliente_email:email,
+          total:'Bs. '+fmt(total),
+          estado:'pendiente',
+          mensaje:'Tu pedido fue recibido. Nos pondremos en contacto pronto para confirmar.',
+          fecha:new Date().toLocaleString('es-VE')
         });
       }
     } catch(e) {}
@@ -674,6 +694,10 @@ function submitOrder() {
     window.open('https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(msg),'_blank');
 
     cClear(); closeCart();
+    document.getElementById('cf-nombre').value='';
+    document.getElementById('cf-tel').value='';
+    document.getElementById('cf-email').value='';
+    document.getElementById('cf-nota').value='';
     toast('¡Pedido enviado! Te contactaremos pronto.','ok');
     btn.disabled = false; btn.textContent = 'Confirmar pedido';
   });
