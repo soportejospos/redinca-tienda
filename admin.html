@@ -176,13 +176,12 @@ body {
 .sidebar.collapsed .user-chip { justify-content: center; }
 .sidebar.collapsed ~ .main { margin-left: 64px; }
 
-/* Overlay para móvil cuando sidebar está abierto */
+/* Overlay para móvil — fondo oscuro DETRÁS del sidebar */
 .sidebar-overlay {
   display: none;
-  position: fixed; inset: 0; z-index: 299;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  position: fixed; inset: 0; z-index: 250;
+  background: rgba(0,0,0,0.5);
+  /* SIN backdrop-filter — así el sidebar se ve claro y el fondo se oscurece */
 }
 .sidebar-overlay.open { display: block; }
 .sidebar-head { padding: 28px 22px 20px; border-bottom: 1px solid var(--border2); }
@@ -579,11 +578,11 @@ input:checked + .tslider:before { transform: translateX(20px); }
     <div class="sidebar-head"><div class="sidebar-logo"><div class="slogo-mark">R</div><div><div class="slogo-name">REDINCA 2025</div><div class="slogo-sub">Admin</div></div></div></div>
     <nav class="sidebar-nav">
       <div class="nav-group-label">Principal</div>
-      <button class="nav-item active" id="nav-dashboard" data-page="dashboard"><span class="ni-icon">📊</span><span class="nav-item-label"> Dashboard</span></button>
-      <button class="nav-item" id="nav-products" data-page="products"><span class="ni-icon">🔩</span><span class="nav-item-label"> Productos</span></button>
-      <button class="nav-item" id="nav-orders" data-page="orders"><span class="ni-icon">📋</span><span class="nav-item-label"> Órdenes</span><span class="nav-pill" id="orders-pill">0</span></button>
+      <button class="nav-item active" id="nav-dashboard" onclick="goTo('dashboard',this)"><span class="ni-icon">📊</span><span class="nav-item-label"> Dashboard</span></button>
+      <button class="nav-item" id="nav-products" onclick="goTo('products',this)"><span class="ni-icon">🔩</span><span class="nav-item-label"> Productos</span></button>
+      <button class="nav-item" id="nav-orders" onclick="goTo('orders',this)"><span class="ni-icon">📋</span><span class="nav-item-label"> Órdenes</span><span class="nav-pill" id="orders-pill">0</span></button>
       <div class="nav-group-label">Tienda</div>
-      <button class="nav-item" onclick="window.open('index.html','_blank')"><span class="ni-icon">🛍️</span><span class="nav-item-label"> Ver tienda</span></button>
+      <button class="nav-item" onclick="window.open('index.html','_blank');closeSidebar();"><span class="ni-icon">🛍️</span><span class="nav-item-label"> Ver tienda</span></button>
     </nav>
     <div class="sidebar-foot"><div class="user-chip"><div class="user-avatar" id="user-av">A</div><div class="user-email" id="user-email">—</div></div><button class="btn btn-ghost btn-sm btn-full" onclick="doLogout()">Cerrar sesión</button></div>
   </aside>
@@ -761,14 +760,16 @@ window.doLogout = async function() { await sb.auth.signOut(); location.reload();
 
 // ==================== NAVEGACIÓN ====================
 function showPage(pageId) {
-  document.querySelectorAll('#page-container .page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#page-container .page').forEach(function(p) { p.classList.remove('active'); });
   var pg = document.getElementById(pageId);
   if (pg) pg.classList.add('active');
   var titles = { 'dashboard-page':'Dashboard de ventas', 'products-page':'Productos', 'orders-page':'Órdenes' };
   document.getElementById('page-title').textContent = titles[pageId] || pageId;
   var tr = document.getElementById('topbar-right');
-  tr.innerHTML = pageId === 'products-page' ? '<button class="btn btn-primary btn-sm" onclick="openProdModal()">➕ Nuevo producto</button>' : '';
-  document.getElementById('sidebar').classList.remove('open');
+  tr.innerHTML = pageId === 'products-page'
+    ? '<button class="btn btn-primary btn-sm" onclick="openProdModal()">➕ Nuevo producto</button>'
+    : '';
+  // NO cerrar sidebar aquí — lo hace goTo para no interferir
 }
 
 function isMobile() { return window.innerWidth <= 820; }
@@ -811,10 +812,7 @@ window.goTo = function(page, el) {
   if (isMobile()) closeSidebar();
 };
 
-// Asignar eventos a botones del menú
-document.querySelectorAll('.nav-item[data-page]').forEach(function(btn) {
-  btn.onclick = function() { goTo(btn.getAttribute('data-page'), btn); };
-});
+// Los nav-item usan onclick directo via goTo() — no necesitan listener adicional
 
 // ==================== CARGA DATOS ====================
 async function loadAll() { await Promise.all([loadProducts(), loadOrders()]); }
@@ -1121,7 +1119,6 @@ window.updateStatus = async function(id, status) {
 
 // Inicializar mostrando Dashboard
 showPage('dashboard-page');
-document.getElementById('nav-dashboard').classList.add('active');
 </script>
 </body>
 </html>
