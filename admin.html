@@ -176,14 +176,8 @@ body {
 .sidebar.collapsed .user-chip { justify-content: center; }
 .sidebar.collapsed ~ .main { margin-left: 64px; }
 
-/* Overlay para móvil — fondo oscuro DETRÁS del sidebar */
-.sidebar-overlay {
-  display: none;
-  position: fixed; inset: 0; z-index: 250;
-  background: rgba(0,0,0,0.5);
-  /* SIN backdrop-filter — así el sidebar se ve claro y el fondo se oscurece */
-}
-.sidebar-overlay.open { display: block; }
+/* Overlay desactivado — el sidebar se superpone sin oscurecer el fondo */
+.sidebar-overlay { display: none !important; }
 .sidebar-head { padding: 28px 22px 20px; border-bottom: 1px solid var(--border2); }
 .sidebar-logo { display: flex; align-items: center; gap: 11px; }
 .slogo-mark {
@@ -578,11 +572,11 @@ input:checked + .tslider:before { transform: translateX(20px); }
     <div class="sidebar-head"><div class="sidebar-logo"><div class="slogo-mark">R</div><div><div class="slogo-name">REDINCA 2025</div><div class="slogo-sub">Admin</div></div></div></div>
     <nav class="sidebar-nav">
       <div class="nav-group-label">Principal</div>
-      <button class="nav-item active" id="nav-dashboard" onclick="goTo('dashboard',this)"><span class="ni-icon">📊</span><span class="nav-item-label"> Dashboard</span></button>
-      <button class="nav-item" id="nav-products" onclick="goTo('products',this)"><span class="ni-icon">🔩</span><span class="nav-item-label"> Productos</span></button>
-      <button class="nav-item" id="nav-orders" onclick="goTo('orders',this)"><span class="ni-icon">📋</span><span class="nav-item-label"> Órdenes</span><span class="nav-pill" id="orders-pill">0</span></button>
+      <button class="nav-item active" id="nav-dashboard"><span class="ni-icon">📊</span><span class="nav-item-label"> Dashboard</span></button>
+      <button class="nav-item" id="nav-products"><span class="ni-icon">🔩</span><span class="nav-item-label"> Productos</span></button>
+      <button class="nav-item" id="nav-orders"><span class="ni-icon">📋</span><span class="nav-item-label"> Órdenes</span><span class="nav-pill" id="orders-pill">0</span></button>
       <div class="nav-group-label">Tienda</div>
-      <button class="nav-item" onclick="window.open('index.html','_blank');closeSidebar();"><span class="ni-icon">🛍️</span><span class="nav-item-label"> Ver tienda</span></button>
+      <button class="nav-item" id="nav-store"><span class="ni-icon">🛍️</span><span class="nav-item-label"> Ver tienda</span></button>
     </nav>
     <div class="sidebar-foot"><div class="user-chip"><div class="user-avatar" id="user-av">A</div><div class="user-email" id="user-email">—</div></div><button class="btn btn-ghost btn-sm btn-full" onclick="doLogout()">Cerrar sesión</button></div>
   </aside>
@@ -812,7 +806,24 @@ window.goTo = function(page, el) {
   if (isMobile()) closeSidebar();
 };
 
-// Los nav-item usan onclick directo via goTo() — no necesitan listener adicional
+// Asignar navegación via JS para garantizar que funcione en móvil (touch)
+document.querySelectorAll('.nav-item[id^="nav-"]').forEach(function(btn) {
+  var pageMap = {'nav-dashboard':'dashboard','nav-products':'products','nav-orders':'orders'};
+  var page = pageMap[btn.id];
+  function handler(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (btn.id === 'nav-store') {
+      window.open('index.html','_blank');
+      closeSidebar();
+      return;
+    }
+    if (!page) return;
+    goTo(page, btn);
+  }
+  btn.addEventListener('click', handler);
+  btn.addEventListener('touchend', handler, {passive: false});
+});
 
 // ==================== CARGA DATOS ====================
 async function loadAll() { await Promise.all([loadProducts(), loadOrders()]); }
