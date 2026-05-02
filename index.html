@@ -659,73 +659,85 @@ function clearCart()   { if(confirm('¿Vaciar el carrito?')){ cClear(); renderCa
 
 
 // ── SUBMIT ORDER ──────────────────────────
-function submitOrder() {
+async function submitOrder() {
   var nombre   = document.getElementById('cf-nombre').value.trim();
   var telefono = document.getElementById('cf-tel').value.trim();
   var email    = document.getElementById('cf-email').value.trim();
   var nota     = document.getElementById('cf-nota').value.trim();
-  if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+  if (!nombre)   { toast('El nombre es obligatorio', 'err'); return; }
   if (!telefono) { toast('El teléfono es obligatorio', 'err'); return; }
   var telDigits = telefono.replace(/\D/g,'');
   if (telDigits.length < 7) { toast('Ingresá un teléfono válido (mínimo 7 dígitos)', 'err'); return; }
-  if (!email) { toast('El correo electrónico es obligatorio', 'err'); return; }
+  if (!email)    { toast('El correo electrónico es obligatorio', 'err'); return; }
   var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) { toast('Ingresá un correo electrónico válido (ej: juan@correo.com)', 'err'); return; }
+
   var btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Enviando…';
-  var items  = cGet();
-  var total  = cTotal();
-  var ordId  = 'ORD-'+Date.now();
 
-  // Guardar en Supabase
-  sb.from('ordenes').insert([{
-    cliente_nombre:nombre, cliente_telefono:telefono,
-    cliente_email:email, cliente_nota:nota, productos:items, total:total, estado:'pendiente'
-  }]).select().single()
-  .then(function(r){ if (!r.error && r.data) ordId = r.data.id; })
-  .catch(function(){})
-  .finally(function() {
-    // EmailJS
-    try {
-      if (window.emailjs) {
-        var linEmail = items.map(function(i){ return i.nombre+' x'+i.qty+' — Bs. '+fmt(i.precio*i.qty); }).join('\n');
-        emailjs.send(EJS_SVC, EJS_TPL, {
-          orden_id:ordId, cliente_nombre:nombre, cliente_telefono:telefono,
-          cliente_email:email, cliente_nota:nota||'—', productos:linEmail,
-          total:'Bs. '+fmt(total), fecha:new Date().toLocaleString('es-VE')
-        });
-      }
-    } catch(e) {}
+  var items = cGet();
+  var total = cTotal();
+  var ordId = null;
 
-    // EmailJS — confirmacion al cliente
-    try {
-      if (window.emailjs && EJS_TPL_CLI !== 'TU_TEMPLATE_CLIENTE') {
-        emailjs.send(EJS_SVC, EJS_TPL_CLI, {
-          orden_id:ordId,
-          cliente_nombre:nombre,
-          cliente_email:email,
-          total:'Bs. '+fmt(total),
-          estado:'pendiente',
-          mensaje:'Tu pedido fue recibido. Nos pondremos en contacto pronto para confirmar.',
-          fecha:new Date().toLocaleString('es-VE')
-        });
-      }
-    } catch(e) {}
+  // 1. Guardar en Supabase y esperar el UUID real
+  try {
+    var res = await sb.from('ordenes').insert([{
+      cliente_nombre:nombre, cliente_telefono:telefono,
+      cliente_email:email, cliente_nota:nota,
+      productos:items, total:total, estado:'pendiente'
+    }]).select().single();
+    if (!res.error && res.data) ordId = res.data.id;
+  } catch(e) { console.warn('Supabase insert:', e); }
 
-    // WhatsApp
-    var linWA = items.map(function(i){ return '  • '+i.nombre+' ×'+i.qty+' — Bs. '+fmt(i.precio*i.qty); }).join('\n');
-    var msg = '🔧 *REDINCA 2025 — Pedido*\n\n*Cliente:* '+nombre+'\n*Teléfono:* '+telefono+(nota?'\n*Nota:* '+nota:'')+'\n\n*Productos:*\n'+linWA+'\n\n*TOTAL: Bs. '+fmt(total)+'*';
-    window.open('https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(msg),'_blank');
+  // ID corto consistente — siempre 8 chars en mayúsculas
+  var ordIdCorto = ordId ? ordId.slice(-8).toUpperCase() : ('TMP'+Date.now().toString().slice(-5));
 
-    cClear(); closeCart();
-    // Limpiar campos si aún están en el DOM
-    ['cf-nombre','cf-tel','cf-email','cf-nota'].forEach(function(id){
-      var el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    toast('¡Pedido enviado! Te contactaremos pronto.','ok');
-    btn.disabled = false; btn.textContent = 'Confirmar pedido';
+  var linEmail = items.map(function(i){ return i.nombre+' x'+i.qty+' — Bs. '+fmt(i.precio*i.qty); }).join('\n');
+  var fecha    = new Date().toLocaleString('es-VE');
+
+  // 2. Email a la empresa
+  try {
+    if (window.emailjs && EJS_TPL !== 'TU_TEMPLATE_ID') {
+      await emailjs.send(EJS_SVC, EJS_TPL, {
+        orden_id:       ordIdCorto,
+        cliente_nombre: nombre,
+        cliente_telefono:telefono,
+        cliente_email:  email,
+        cliente_nota:   nota||'—',
+        productos:      linEmail,
+        total:          'Bs. '+fmt(total),
+        fecha:          fecha
+      });
+    }
+  } catch(e) { console.warn('EmailJS empresa:', e); }
+
+  // 3. Email de confirmación al cliente
+  try {
+    if (window.emailjs && EJS_TPL_CLI !== 'TU_TEMPLATE_CLIENTE') {
+      await emailjs.send(EJS_SVC, EJS_TPL_CLI, {
+        asunto:         'REDINCA 2025 — Pedido recibido #'+ordIdCorto,
+        orden_id:       ordIdCorto,
+        cliente_nombre: nombre,
+        cliente_email:  email,
+        total:          'Bs. '+fmt(total),
+        estado:         'Pendiente',
+        mensaje:        'Tu pedido fue recibido correctamente. Nos pondremos en contacto pronto para confirmar.',
+        fecha:          fecha
+      });
+    }
+  } catch(e) { console.warn('EmailJS cliente:', e); }
+
+  // 4. WhatsApp a la empresa
+  var linWA = items.map(function(i){ return '  • '+i.nombre+' ×'+i.qty+' — Bs. '+fmt(i.precio*i.qty); }).join('\n');
+  var msg = '🔧 *REDINCA 2025 — Pedido #'+ordIdCorto+'*\n\n*Cliente:* '+nombre+'\n*Teléfono:* '+telefono+(nota?'\n*Nota:* '+nota:'')+'\n\n*Productos:*\n'+linWA+'\n\n*TOTAL: Bs. '+fmt(total)+'*';
+  window.open('https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(msg),'_blank');
+
+  cClear(); closeCart();
+  ['cf-nombre','cf-tel','cf-email','cf-nota'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
   });
+  toast('¡Pedido enviado! Te contactaremos pronto.','ok');
+  btn.disabled = false; btn.textContent = 'Confirmar pedido';
 }
 </script>
 </body>
