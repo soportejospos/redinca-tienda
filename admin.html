@@ -639,12 +639,14 @@ const WA_NUMBER     = '56990500542';
 // ⚠️ EmailJS — reemplazá con tus valores
 const EJS_SVC       = 'service_xq6elgo';
 const EJS_TPL_CLI   = 'template_fi9w54b'; // template de notificaciones al cliente
+const EJS_KEY       = 'aasfUi1Av5-qT3E8O';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-window.addEventListener('load', function() {
-  if (window.emailjs) emailjs.init('aasfUi1Av5-qT3E8O');
-});
+// EmailJS init — se ejecuta inmediatamente al cargar el script
+(function() {
+  if (window.emailjs) emailjs.init(EJS_KEY);
+})();
 
 const fmt = n => new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
 const fmtDate = s => new Date(s).toLocaleDateString('es-VE',{day:'2-digit',month:'short',year:'numeric'});
@@ -946,41 +948,73 @@ window.renderOrders = function() {
   el.innerHTML = list.map(o=>{
     const items = Array.isArray(o.productos)?o.productos:[];
     const waMsg = encodeURIComponent(`Hola ${o.cliente_nombre}, tu pedido está ${o.estado}.`);
-    return `<div class="order-card"><div class="order-top"><div><div class="order-id">#${(o.id||'').slice(-8)} · ${fmtDate(o.created_at)}</div><div class="order-name">${o.cliente_nombre}</div><div class="order-tel">📞 ${o.cliente_telefono}</div>${o.cliente_email?`<div style="font-size:12px;color:var(--muted);margin-top:2px;">✉️ ${o.cliente_email}</div>`:''} ${o.cliente_nota?`<div>📝 ${o.cliente_nota}</div>`:''}</div><span class="badge ${SB[o.estado]||'badge-gray'}">${o.estado}</span></div><div class="order-body"><div>${items.map(i=>`<div class="order-line"><span>${i.nombre} × ${i.qty}</span>Bs. ${fmt(i.precio*i.qty)}</div>`).join('')}</div><div class="order-total">Total: Bs. ${fmt(o.total||0)}</div></div><div class="order-foot"><select class="status-select" onchange="updateStatus('${o.id}',this.value)">${['pendiente','confirmado','entregado','cancelado'].map(s=>`<option value="${s}" ${o.estado===s?'selected':''}>${s}</option>`).join('')}</select><a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" class="btn btn-ghost btn-sm">💬 WhatsApp</a></div></div>`;
+    return `<div class="order-card" data-order-id="${o.id}"><div class="order-top"><div><div class="order-id">#${(o.id||'').slice(-8).toUpperCase()} · ${fmtDate(o.created_at)}</div><div class="order-name">${o.cliente_nombre}</div><div class="order-tel">📞 ${o.cliente_telefono}</div>${o.cliente_email?`<div style="font-size:12px;color:var(--muted);margin-top:2px;">✉️ ${o.cliente_email}</div>`:''} ${o.cliente_nota?`<div>📝 ${o.cliente_nota}</div>`:''}</div><span class="badge order-status-badge ${SB[o.estado]||'badge-gray'}">${o.estado}</span></div><div class="order-body"><div>${items.map(i=>`<div class="order-line"><span>${i.nombre} × ${i.qty}</span>Bs. ${fmt(i.precio*i.qty)}</div>`).join('')}</div><div class="order-total">Total: Bs. ${fmt(o.total||0)}</div></div><div class="order-foot"><select class="status-select" onchange="updateStatus('${o.id}',this.value)">${['pendiente','confirmado','entregado','cancelado'].map(s=>`<option value="${s}" ${o.estado===s?'selected':''}>${s}</option>`).join('')}</select><a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" class="btn btn-ghost btn-sm">💬 WhatsApp</a></div></div>`;
   }).join('');
 };
 window.updateStatus = async function(id, status) {
   const {error} = await sb.from('ordenes').update({estado:status}).eq('id',id);
-  if (error) { toast('Error','err'); return; }
-  const o = orders.find(x=>x.id===id); if(o) o.estado=status;
-  toast('Estado actualizado','ok');
+  if (error) { toast('Error al actualizar estado','err'); return; }
+
+  // Actualizar en memoria
+  const o = orders.find(x=>x.id===id);
+  if (o) o.estado = status;
+
+  // ── FIX: Actualizar badge de estado en tiempo real sin rerenderizar todo ──
+  const card = document.querySelector('[data-order-id="'+id+'"]');
+  if (card) {
+    const SBmap = {pendiente:'badge-orange',confirmado:'badge-green',entregado:'badge-gray',cancelado:'badge-red'};
+    const badge = card.querySelector('.order-status-badge');
+    if (badge) {
+      badge.className = 'badge order-status-badge ' + (SBmap[status]||'badge-gray');
+      badge.textContent = status;
+    }
+  }
+
+  toast('Estado actualizado a: ' + status.charAt(0).toUpperCase() + status.slice(1), 'ok');
+
+  // Actualizar pill de pendientes
   const pending = orders.filter(o=>o.estado==='pendiente').length;
   document.getElementById('orders-pill').textContent = pending;
   document.getElementById('orders-pill').classList.toggle('show', pending>0);
   renderSalesDashboard();
 
-  // ── Notificación email al cliente por cambio de estado ──
-  if (o && o.cliente_email && EJS_TPL_CLI !== 'TU_TEMPLATE_CLIENTE') {
-    const mensajes = {
-      confirmado: 'Tu pedido fue confirmado. Nos pondremos en contacto para coordinar la entrega.',
-      entregado:  '¡Tu pedido fue entregado! Gracias por confiar en REDINCA 2025.',
-      cancelado:  'Tu pedido fue cancelado. Si tenés alguna consulta, contactanos por WhatsApp.',
-      pendiente:  'Tu pedido está en revisión. Te notificaremos pronto.'
-    };
-    try {
-      if (window.emailjs) {
-        emailjs.send(EJS_SVC, EJS_TPL_CLI, {
-          orden_id:     (o.id||'').slice(-8).toUpperCase(),
-          cliente_nombre:  o.cliente_nombre,
-          cliente_email:   o.cliente_email,
-          total:           'Bs. ' + fmt(o.total||0),
-          estado:          status.charAt(0).toUpperCase() + status.slice(1),
-          mensaje:         mensajes[status] || '',
-          fecha:           new Date().toLocaleString('es-VE')
-        });
-        toast('Email enviado a ' + o.cliente_email, 'ok');
-      }
-    } catch(e) { console.warn('EmailJS:', e); }
+  // ── Notificación email al cliente ──
+  if (!o || !o.cliente_email) return;
+  if (EJS_TPL_CLI === 'TU_TEMPLATE_CLIENTE') {
+    toast('⚠️ Configurá EJS_TPL_CLI para enviar emails al cliente','err');
+    return;
+  }
+
+  const mensajes = {
+    confirmado: 'Tu pedido fue confirmado. Nos pondremos en contacto para coordinar la entrega.',
+    entregado:  '¡Tu pedido fue entregado! Gracias por confiar en REDINCA 2025.',
+    cancelado:  'Tu pedido fue cancelado. Si tenés alguna consulta, contactanos por WhatsApp.',
+    pendiente:  'Tu pedido está siendo revisado. Te notificaremos pronto.'
+  };
+
+  // FIX: usar ID corto consistente (últimos 8 chars en mayúsculas)
+  const ordenIdCorto = (o.id||'').slice(-8).toUpperCase();
+
+  // FIX: pasar campo "asunto" para que el template pueda usarlo en el Subject
+  const estadoLabel = status.charAt(0).toUpperCase() + status.slice(1);
+  const asunto = 'REDINCA 2025 — Tu pedido está: ' + estadoLabel;
+
+  try {
+    if (!window.emailjs) throw new Error('EmailJS no está cargado');
+    await emailjs.send(EJS_SVC, EJS_TPL_CLI, {
+      asunto:          asunto,
+      orden_id:        ordenIdCorto,
+      cliente_nombre:  o.cliente_nombre,
+      cliente_email:   o.cliente_email,
+      total:           'Bs. ' + fmt(o.total||0),
+      estado:          estadoLabel,
+      mensaje:         mensajes[status] || '',
+      fecha:           new Date().toLocaleString('es-VE')
+    });
+    toast('✉️ Email enviado a ' + o.cliente_email, 'ok');
+  } catch(e) {
+    console.error('EmailJS error:', e);
+    toast('Error al enviar email: ' + (e.text || e.message || 'desconocido'), 'err');
   }
 };
 
