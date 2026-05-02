@@ -467,6 +467,10 @@ input:checked + .tslider:before { transform: translateX(20px); }
 }
 
 .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+
+/* ── PÁGINAS: solo la activa es visible ── */
+#page-container .page { display: none; }
+#page-container .page.active { display: block; }
 .spin {
   width: 28px; height: 28px;
   border: 2.5px solid var(--border);
@@ -624,14 +628,23 @@ input:checked + .tslider:before { transform: translateX(20px); }
 
 <div id="toasts"></div>
 
-<script type="module">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
 // ==================== CONFIGURACIÓN ====================
-const SUPABASE_URL = 'https://ysecnphhuessiznsdfof.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZWNucGhodWVzc2l6bnNkZm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTgyOTgsImV4cCI6MjA5MzE5NDI5OH0.nFeRiqEoyALMF0XEiyrxbIN1CgzfXzjfzWNMnSp14Dw';
+const SUPABASE_URL  = 'https://ysecnphhuessiznsdfof.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZWNucGhodWVzc2l6bnNkZm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTgyOTgsImV4cCI6MjA5MzE5NDI5OH0.nFeRiqEoyALMF0XEiyrxbIN1CgzfXzjfzWNMnSp14Dw';
 const WA_NUMBER     = '56990500542';
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+// ⚠️ EmailJS — reemplazá con tus valores
+const EJS_SVC       = 'service_xq6elgo';
+const EJS_TPL_CLI   = 'template_fi9w54b'; // template de notificaciones al cliente
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+window.addEventListener('load', function() {
+  if (window.emailjs) emailjs.init('aasfUi1Av5-qT3E8O');
+});
 
 const fmt = n => new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
 const fmtDate = s => new Date(s).toLocaleDateString('es-VE',{day:'2-digit',month:'short',year:'numeric'});
@@ -675,29 +688,29 @@ window.doLogout = async function() { await sb.auth.signOut(); location.reload();
 // ==================== NAVEGACIÓN ====================
 function showPage(pageId) {
   document.querySelectorAll('#page-container .page').forEach(p => p.classList.remove('active'));
-  document.getElementById(pageId).classList.add('active');
-  const titles = { dashboard:'Dashboard de ventas', products:'Productos', orders:'Órdenes' };
-  document.getElementById('page-title').textContent = titles[pageId === 'dashboard-page' ? 'dashboard' : (pageId === 'products-page' ? 'products' : 'orders')];
-  const tr = document.getElementById('topbar-right');
-  tr.innerHTML = pageId === 'products-page' ? `<button class="btn btn-primary btn-sm" onclick="openProdModal()">➕ Nuevo producto</button>` : '';
+  var pg = document.getElementById(pageId);
+  if (pg) pg.classList.add('active');
+  var titles = { 'dashboard-page':'Dashboard de ventas', 'products-page':'Productos', 'orders-page':'Órdenes' };
+  document.getElementById('page-title').textContent = titles[pageId] || pageId;
+  var tr = document.getElementById('topbar-right');
+  tr.innerHTML = pageId === 'products-page' ? '<button class="btn btn-primary btn-sm" onclick="openProdModal()">➕ Nuevo producto</button>' : '';
   document.getElementById('sidebar').classList.remove('open');
 }
 
 window.goTo = function(page, el) {
-  let pageId = '';
+  var pageId = '';
   if (page === 'dashboard') pageId = 'dashboard-page';
   else if (page === 'products') pageId = 'products-page';
   else if (page === 'orders') pageId = 'orders-page';
   if (!pageId) return;
   showPage(pageId);
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
   if (el) el.classList.add('active');
 };
 
 // Asignar eventos a botones del menú
-document.querySelectorAll('.nav-item').forEach(btn => {
-  const page = btn.id.replace('nav-', '');
-  btn.onclick = () => goTo(page, btn);
+document.querySelectorAll('.nav-item[data-page]').forEach(function(btn) {
+  btn.onclick = function() { goTo(btn.getAttribute('data-page'), btn); };
 });
 
 // ==================== CARGA DATOS ====================
@@ -933,7 +946,7 @@ window.renderOrders = function() {
   el.innerHTML = list.map(o=>{
     const items = Array.isArray(o.productos)?o.productos:[];
     const waMsg = encodeURIComponent(`Hola ${o.cliente_nombre}, tu pedido está ${o.estado}.`);
-    return `<div class="order-card"><div class="order-top"><div><div class="order-id">#${(o.id||'').slice(-8)} · ${fmtDate(o.created_at)}</div><div class="order-name">${o.cliente_nombre}</div><div class="order-tel">📞 ${o.cliente_telefono}</div>${o.cliente_nota?`<div>📝 ${o.cliente_nota}</div>`:''}</div><span class="badge ${SB[o.estado]||'badge-gray'}">${o.estado}</span></div><div class="order-body"><div>${items.map(i=>`<div class="order-line"><span>${i.nombre} × ${i.qty}</span>Bs. ${fmt(i.precio*i.qty)}</div>`).join('')}</div><div class="order-total">Total: Bs. ${fmt(o.total||0)}</div></div><div class="order-foot"><select class="status-select" onchange="updateStatus('${o.id}',this.value)">${['pendiente','confirmado','entregado','cancelado'].map(s=>`<option value="${s}" ${o.estado===s?'selected':''}>${s}</option>`).join('')}</select><a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" class="btn btn-ghost btn-sm">💬 WhatsApp</a></div></div>`;
+    return `<div class="order-card"><div class="order-top"><div><div class="order-id">#${(o.id||'').slice(-8)} · ${fmtDate(o.created_at)}</div><div class="order-name">${o.cliente_nombre}</div><div class="order-tel">📞 ${o.cliente_telefono}</div>${o.cliente_email?`<div style="font-size:12px;color:var(--muted);margin-top:2px;">✉️ ${o.cliente_email}</div>`:''} ${o.cliente_nota?`<div>📝 ${o.cliente_nota}</div>`:''}</div><span class="badge ${SB[o.estado]||'badge-gray'}">${o.estado}</span></div><div class="order-body"><div>${items.map(i=>`<div class="order-line"><span>${i.nombre} × ${i.qty}</span>Bs. ${fmt(i.precio*i.qty)}</div>`).join('')}</div><div class="order-total">Total: Bs. ${fmt(o.total||0)}</div></div><div class="order-foot"><select class="status-select" onchange="updateStatus('${o.id}',this.value)">${['pendiente','confirmado','entregado','cancelado'].map(s=>`<option value="${s}" ${o.estado===s?'selected':''}>${s}</option>`).join('')}</select><a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" class="btn btn-ghost btn-sm">💬 WhatsApp</a></div></div>`;
   }).join('');
 };
 window.updateStatus = async function(id, status) {
@@ -945,10 +958,35 @@ window.updateStatus = async function(id, status) {
   document.getElementById('orders-pill').textContent = pending;
   document.getElementById('orders-pill').classList.toggle('show', pending>0);
   renderSalesDashboard();
+
+  // ── Notificación email al cliente por cambio de estado ──
+  if (o && o.cliente_email && EJS_TPL_CLI !== 'TU_TEMPLATE_CLIENTE') {
+    const mensajes = {
+      confirmado: 'Tu pedido fue confirmado. Nos pondremos en contacto para coordinar la entrega.',
+      entregado:  '¡Tu pedido fue entregado! Gracias por confiar en REDINCA 2025.',
+      cancelado:  'Tu pedido fue cancelado. Si tenés alguna consulta, contactanos por WhatsApp.',
+      pendiente:  'Tu pedido está en revisión. Te notificaremos pronto.'
+    };
+    try {
+      if (window.emailjs) {
+        emailjs.send(EJS_SVC, EJS_TPL_CLI, {
+          orden_id:     (o.id||'').slice(-8).toUpperCase(),
+          cliente_nombre:  o.cliente_nombre,
+          cliente_email:   o.cliente_email,
+          total:           'Bs. ' + fmt(o.total||0),
+          estado:          status.charAt(0).toUpperCase() + status.slice(1),
+          mensaje:         mensajes[status] || '',
+          fecha:           new Date().toLocaleString('es-VE')
+        });
+        toast('Email enviado a ' + o.cliente_email, 'ok');
+      }
+    } catch(e) { console.warn('EmailJS:', e); }
+  }
 };
 
 // Inicializar mostrando Dashboard
 showPage('dashboard-page');
+document.getElementById('nav-dashboard').classList.add('active');
 </script>
 </body>
 </html>
